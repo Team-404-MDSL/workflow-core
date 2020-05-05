@@ -28,7 +28,7 @@ index 810d633..cc079da 100644
 +                }
 +                catch (Exception e)
 +                {
-+                    throw new Exception($"Error assinging input {input.Key}: {e.Message}", e);
++                    throw new Exception($"Error assigning input {input.Key}: {e.Message}", e);
                  }
              }
              return acn;
