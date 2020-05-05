@@ -16,7 +16,7 @@
     <!-- Custom overrides -->
     <GitSemVerMajor>3</GitSemVerMajor>
     <GitSemVerMinor>1</GitSemVerMinor>
-    <GitSemVerPatch>6</GitSemVerPatch>
+    <GitSemVerPatch>7</GitSemVerPatch>
     <!--<GitSemVerPrerelease></GitSemVerPrerelease>-->
     <!--<GitSemVerBuildMetadata></GitSemVerBuildMetadata>-->
     <!--<GitBranch></GitBranch>-->
