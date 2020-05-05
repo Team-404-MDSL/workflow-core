@@ -267,6 +267,7 @@ namespace WorkflowCore.Services.DefinitionStorage
                     object resolvedValue = sourceExpr.Compile().DynamicInvoke(pData, pContext, Environment.GetEnvironmentVariables());
                     if (stepProperty.PropertyType.IsEnum)
                         stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
+                    else
                     {
                         if ((resolvedValue != null) && (stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType())))
                             stepProperty.SetValue(pStep, resolvedValue);
