@@ -276,7 +276,7 @@ namespace WorkflowCore.Services.DefinitionStorage
                 }
                 catch (Exception e)
                 {
-                    throw new Exception($"Error assinging input {input.Key}: {e.Message}", e);
+                    throw new Exception($"Error assigning input {input.Key}: {e.Message}", e);
                 }
             }
             return acn;
