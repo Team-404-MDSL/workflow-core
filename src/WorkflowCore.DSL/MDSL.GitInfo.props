@@ -1,0 +1,30 @@
+﻿<!-- 
+  Optional configuration file for the MDSL.GitInfo nuget package.
+-->
+<Project>
+  <PropertyGroup>
+    <!-- Try to retrieve SemVer version information from Git tags -->
+    <!--<GitGetSemVerInfo>true</GitGetSemVerInfo>-->
+
+    <!-- 
+    Custom regex override for matching SemVer information from git tags.
+    The custom provided regex may provide all or some of the following named capture groups: <major>, <minor>, <patch>, <prerelease>, <buildmetadata>
+    The below sample contains the default regex if not overriden.
+    -->
+    <!--<GitSemVerRegex><![CDATA[^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)(?:-(?<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$]]></GitSemVerRegex>-->
+
+    <!-- Custom overrides -->
+    <GitSemVerMajor>3</GitSemVerMajor>
+    <GitSemVerMinor>1</GitSemVerMinor>
+    <GitSemVerPatch>6</GitSemVerPatch>
+    <!--<GitSemVerPrerelease></GitSemVerPrerelease>-->
+    <!--<GitSemVerBuildMetadata></GitSemVerBuildMetadata>-->
+    <!--<GitBranch></GitBranch>-->
+    <!--<GitCommit></GitCommit>-->
+    <!--<GitSha></GitSha>-->
+    <!--<GitTag></GitTag>-->
+    <!--<GitBaseTag></GitBaseTag>-->
+    <!--<GitCommits></GitCommits>-->
+
+  </PropertyGroup>
+</Project>
