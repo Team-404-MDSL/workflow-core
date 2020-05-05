@@ -262,16 +262,27 @@ namespace WorkflowCore.Services.DefinitionStorage
 
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
-                object resolvedValue = sourceExpr.Compile().DynamicInvoke(pData, pContext, Environment.GetEnvironmentVariables());
-                if (stepProperty.PropertyType.IsEnum)
-                    stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
-                else
-                    stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
+                try
+                {
+                    object resolvedValue = sourceExpr.Compile().DynamicInvoke(pData, pContext, Environment.GetEnvironmentVariables());
+                    if (stepProperty.PropertyType.IsEnum)
+                        stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
+                    {
+                        if ((resolvedValue != null) && (stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType())))
+                            stepProperty.SetValue(pStep, resolvedValue);
+                        else
+                            stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Error assinging input {input.Key}: {e.Message}", e);
+                }
             }
             return acn;
         }
 
-        private static Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(KeyValuePair<string, object> input, ParameterExpression dataParameter, ParameterExpression contextParameter, ParameterExpression environmentVarsParameter, PropertyInfo stepProperty)
+            private static Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(KeyValuePair<string, object> input, ParameterExpression dataParameter, ParameterExpression contextParameter, ParameterExpression environmentVarsParameter, PropertyInfo stepProperty)
         {
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
