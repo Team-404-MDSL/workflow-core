@@ -2,17 +2,22 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Version>3.1.0</Version>
     <Description>DSL extenstion for Workflow Core provding support for JSON and YAML workflow definitions.</Description>
     <Authors>Daniel Gerlag</Authors>
     <Company />
     <Product>WorkflowCore</Product>
-    <PackageProjectUrl>https://github.com/danielgerlag/workflow-core</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/danielgerlag/workflow-core.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Team-404-MDSL/workflow-core</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Team-404-MDSL/workflow-core</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MDSL.STL.NugetPackaging" Version="2.3.767">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="SharpYaml" Version="1.6.5" />
   </ItemGroup>
