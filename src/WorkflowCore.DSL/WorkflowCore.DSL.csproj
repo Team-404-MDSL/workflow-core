@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Version>3.1.0</Version>
+    <Version>3.1.5</Version>
     <Description>DSL extenstion for Workflow Core provding support for JSON and YAML workflow definitions.</Description>
     <Authors>Team-404-MDSL</Authors>
     <Company />
