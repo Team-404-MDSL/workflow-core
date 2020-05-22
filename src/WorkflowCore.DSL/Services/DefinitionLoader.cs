@@ -272,9 +272,14 @@ namespace WorkflowCore.Services.DefinitionStorage
                     else
                     {
                         if ((resolvedValue != null) && (stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType())))
+                        {
                             stepProperty.SetValue(pStep, resolvedValue);
+                        }
                         else
-                            stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
+                        {
+                            Type conversionType = Nullable.GetUnderlyingType(stepProperty.PropertyType) ?? stepProperty.PropertyType;
+                            stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, conversionType));
+                        }
                     }
                 }
                 catch (Exception e)
