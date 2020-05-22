@@ -9,6 +9,7 @@ namespace WorkflowCore.TestAssets.Steps
     public class Counter : StepBody
     {
         public int Value { get; set; }
+        public DateTime? Date { get; set; }
         public override ExecutionResult Run(IStepExecutionContext context)
         {
             Value++;

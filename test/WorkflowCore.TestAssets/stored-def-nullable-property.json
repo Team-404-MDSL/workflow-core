@@ -1,0 +1,19 @@
+﻿{
+  "Id": "Test",
+  "Version": 1,
+  "Description": "",
+  "DataType": "WorkflowCore.TestAssets.DataTypes.DynamicData, WorkflowCore.TestAssets",
+  "Steps": [
+    {
+      "Id": "Step1",
+      "StepType": "WorkflowCore.TestAssets.Steps.Counter, WorkflowCore.TestAssets",
+      "ErrorBehavior": "Retry",
+      "Inputs": {
+        "Date": "data[\"date\"]"
+      },
+      "Outputs": {
+        "Counter1": "step.Value"
+      }
+    }
+  ]
+}

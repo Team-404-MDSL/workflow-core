@@ -83,5 +83,23 @@ namespace WorkflowCore.IntegrationTests.Scenarios
             data["Counter5"].Should().Be(0);
             data["Counter6"].Should().Be(1);
         }
+
+        [Fact]
+        public void should_execute_json_workflow_with_nullable_step_properties()
+        {
+            var initialData = new DynamicData
+            {
+                ["date"] = "2020-05-22T11:20:37.034Z",
+                ["Counter1"] = 0,
+            };
+
+            var workflowId = StartWorkflow(TestAssets.Utils.GetTestDefinitionJsonNullableProperty(), initialData);
+            WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(10));
+
+            var data = GetData<DynamicData>(workflowId);
+            GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
+            UnhandledStepErrors.Count.Should().Be(0);
+            data["Counter1"].Should().Be(1);
+        }
     }
 }
