@@ -278,7 +278,7 @@ namespace WorkflowCore.Services.DefinitionStorage
                         else
                         {
                             Type conversionType = Nullable.GetUnderlyingType(stepProperty.PropertyType) ?? stepProperty.PropertyType;
-                            stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, conversionType));
+                            stepProperty.SetValue(pStep, resolvedValue == null ? null : System.Convert.ChangeType(resolvedValue, conversionType));
                         }
                     }
                 }
