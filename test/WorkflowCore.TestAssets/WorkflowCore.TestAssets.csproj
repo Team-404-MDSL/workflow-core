@@ -57,6 +57,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="stored-def-nested-property.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="stored-def-nullable-property.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

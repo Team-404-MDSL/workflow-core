@@ -1,0 +1,24 @@
+﻿{
+  "Id": "Test",
+  "Version": 1,
+  "Description": "",
+  "DataType": "WorkflowCore.TestAssets.DataTypes.DynamicData, WorkflowCore.TestAssets",
+  "Steps": [
+    {
+      "Id": "Step1",
+      "StepType": "WorkflowCore.TestAssets.Steps.Nested, WorkflowCore.TestAssets",
+      "ErrorBehavior": "Retry",
+      "Inputs": {
+        "Person": {
+          "Name": "Test Name",
+          "NestedData": {
+            "@DoB": "data[\"dob\"]"
+          }
+        }
+      },
+      "Outputs": {
+        "Person": "step.Person"
+      }
+    }
+  ]
+}

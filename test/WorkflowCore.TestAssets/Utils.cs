@@ -42,6 +42,11 @@ namespace WorkflowCore.TestAssets
         {
             return File.ReadAllText("stored-def-nullable-property.json");
         }
+
+        public static string GetTestDefinitionJsonNestedProperty()
+        {
+            return File.ReadAllText("stored-def-nested-property.json");
+        }
     }
 }
 

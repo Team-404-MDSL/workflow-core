@@ -290,7 +290,7 @@ namespace WorkflowCore.Services.DefinitionStorage
             return acn;
         }
 
-            private static Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(KeyValuePair<string, object> input, ParameterExpression dataParameter, ParameterExpression contextParameter, ParameterExpression environmentVarsParameter, PropertyInfo stepProperty)
+        private static Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(KeyValuePair<string, object> input, ParameterExpression dataParameter, ParameterExpression contextParameter, ParameterExpression environmentVarsParameter, PropertyInfo stepProperty)
         {
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
@@ -310,16 +310,16 @@ namespace WorkflowCore.Services.DefinitionStorage
                             subobj.Remove(prop.Name);
                             subobj.Add(prop.Name.TrimStart('@'), JToken.FromObject(resolvedValue));
                         }
-                    }
 
-                    foreach (var child in subobj.Children<JObject>())
-                        stack.Push(child);
+                        foreach (var child in prop.Children<JObject>())
+                            stack.Push(child);
+                    }
                 }
 
-                stepProperty.SetValue(pStep, destObj);
+                var typedObj = destObj.ToObject(stepProperty.PropertyType);
+                stepProperty.SetValue(pStep, typedObj);
             }
             return acn;
         }
-
     }
 }
