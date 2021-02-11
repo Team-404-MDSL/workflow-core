@@ -18,8 +18,9 @@ namespace WorkflowCore.Services
         private readonly IPersistenceProvider _persistenceStore;
         private readonly IExecutionPointerFactory _pointerFactory;
         private readonly IQueueProvider _queueService;
+        private readonly IDateTimeProvider _dateTimeProvider;
 
-        public SyncWorkflowRunner(IWorkflowHost host, IWorkflowExecutor executor, IDistributedLockProvider lockService, IWorkflowRegistry registry, IPersistenceProvider persistenceStore, IExecutionPointerFactory pointerFactory, IQueueProvider queueService)
+        public SyncWorkflowRunner(IWorkflowHost host, IWorkflowExecutor executor, IDistributedLockProvider lockService, IWorkflowRegistry registry, IPersistenceProvider persistenceStore, IExecutionPointerFactory pointerFactory, IQueueProvider queueService, IDateTimeProvider dateTimeProvider)
         {
             _host = host;
             _executor = executor;
@@ -28,9 +29,18 @@ namespace WorkflowCore.Services
             _persistenceStore = persistenceStore;
             _pointerFactory = pointerFactory;
             _queueService = queueService;
+            _dateTimeProvider = dateTimeProvider;
         }
 
-        public async Task<WorkflowInstance> RunWorkflowSync<TData>(string workflowId, int version, TData data, string reference, TimeSpan timeOut, bool persistSate = true)
+        public Task<WorkflowInstance> RunWorkflowSync<TData>(string workflowId, int version, TData data,
+            string reference, TimeSpan timeOut, bool persistSate = true)
+            where TData : new()
+        {
+            return RunWorkflowSync(workflowId, version, data, reference, new CancellationTokenSource(timeOut).Token,
+                persistSate);
+        }
+
+        public async Task<WorkflowInstance> RunWorkflowSync<TData>(string workflowId, int version, TData data, string reference, CancellationToken token, bool persistSate = true)
             where TData : new()
         {
             var def = _registry.GetDefinition(workflowId, version);
@@ -46,7 +56,7 @@ namespace WorkflowCore.Services
                 Data = data,
                 Description = def.Description,
                 NextExecution = 0,
-                CreateTime = DateTime.Now.ToUniversalTime(),
+                CreateTime = _dateTimeProvider.UtcNow,
                 Status = WorkflowStatus.Suspended,
                 Reference = reference
             };
@@ -60,8 +70,6 @@ namespace WorkflowCore.Services
             }
 
             wf.ExecutionPointers.Add(_pointerFactory.BuildGenesisPointer(def));
-
-            var stopWatch = new Stopwatch();
 
             var id = Guid.NewGuid().ToString();
 
@@ -79,8 +87,7 @@ namespace WorkflowCore.Services
 
             try
             {
-                stopWatch.Start();
-                while ((wf.Status == WorkflowStatus.Runnable) && (timeOut.TotalMilliseconds > stopWatch.ElapsedMilliseconds))
+                while ((wf.Status == WorkflowStatus.Runnable) && !token.IsCancellationRequested)
                 {
                     await _executor.Execute(wf);
                     if (persistSate)
@@ -89,7 +96,6 @@ namespace WorkflowCore.Services
             }
             finally
             {
-                stopWatch.Stop();
                 await _lockService.ReleaseLock(id);
             }
 

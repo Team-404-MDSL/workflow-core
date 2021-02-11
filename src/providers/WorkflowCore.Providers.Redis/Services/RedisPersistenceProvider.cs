@@ -25,14 +25,16 @@ namespace WorkflowCore.Providers.Redis.Services
         private readonly IDatabase _redis;
 
         private readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+        private readonly bool _removeComplete;
 
-        public RedisPersistenceProvider(string connectionString, string prefix, ILoggerFactory logFactory)
+        public RedisPersistenceProvider(string connectionString, string prefix, bool removeComplete, ILoggerFactory logFactory)
         {
             _connectionString = connectionString;
             _prefix = prefix;
             _logger = logFactory.CreateLogger(GetType());
             _multiplexer = ConnectionMultiplexer.Connect(_connectionString);
             _redis = _multiplexer.GetDatabase();
+            _removeComplete = removeComplete;
         }
 
         public async Task<string> CreateNewWorkflow(WorkflowInstance workflow)
@@ -50,13 +52,17 @@ namespace WorkflowCore.Providers.Redis.Services
             if ((workflow.Status == WorkflowStatus.Runnable) && (workflow.NextExecution.HasValue))
                 await _redis.SortedSetAddAsync($"{_prefix}.{WORKFLOW_SET}.{RUNNABLE_INDEX}", workflow.Id, workflow.NextExecution.Value);
             else
+            {
                 await _redis.SortedSetRemoveAsync($"{_prefix}.{WORKFLOW_SET}.{RUNNABLE_INDEX}", workflow.Id);
+                if (_removeComplete && workflow.Status == WorkflowStatus.Complete)
+                    await _redis.HashDeleteAsync($"{_prefix}.{WORKFLOW_SET}", workflow.Id);
+            }
         }
 
         public async Task<IEnumerable<string>> GetRunnableInstances(DateTime asAt)
         {
             var result = new List<string>();
-            var data = await _redis.SortedSetRangeByScoreAsync($"{_prefix}.{WORKFLOW_SET}.{RUNNABLE_INDEX}", -1, DateTime.UtcNow.Ticks);
+            var data = await _redis.SortedSetRangeByScoreAsync($"{_prefix}.{WORKFLOW_SET}.{RUNNABLE_INDEX}", -1, asAt.ToUniversalTime().Ticks);
 
             foreach (var item in data)
                 result.Add(item);
@@ -64,7 +70,7 @@ namespace WorkflowCore.Providers.Redis.Services
             return result;
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(WorkflowStatus? status, string type, DateTime? createdFrom, DateTime? createdTo, int skip,
+        public Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(WorkflowStatus? status, string type, DateTime? createdFrom, DateTime? createdTo, int skip,
             int take)
         {
             throw new NotImplementedException();
