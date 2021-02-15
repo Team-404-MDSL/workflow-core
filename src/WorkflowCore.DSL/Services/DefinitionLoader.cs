@@ -278,15 +278,27 @@ namespace WorkflowCore.Services.DefinitionStorage
 
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
-                object resolvedValue = sourceExpr.Compile().DynamicInvoke(pData, pContext, Environment.GetEnvironmentVariables());
-                if (stepProperty.PropertyType.IsEnum)
-                    stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
-                else
+                try
                 {
-                    if ((resolvedValue != null) && (stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType())))
-                        stepProperty.SetValue(pStep, resolvedValue);
+                    object resolvedValue = sourceExpr.Compile().DynamicInvoke(pData, pContext, Environment.GetEnvironmentVariables());
+                    if (stepProperty.PropertyType.IsEnum)
+                        stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
                     else
-                        stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
+                    {
+                        if ((resolvedValue != null) && (stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType())))
+                        {
+                            stepProperty.SetValue(pStep, resolvedValue);
+                        }
+                        else
+                        {
+                            Type conversionType = Nullable.GetUnderlyingType(stepProperty.PropertyType) ?? stepProperty.PropertyType;
+                            stepProperty.SetValue(pStep, resolvedValue == null ? null : System.Convert.ChangeType(resolvedValue, conversionType));
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Error assigning input {input.Key}: {e.Message}", e);
                 }
             }
             return acn;
@@ -312,16 +324,16 @@ namespace WorkflowCore.Services.DefinitionStorage
                             subobj.Remove(prop.Name);
                             subobj.Add(prop.Name.TrimStart('@'), JToken.FromObject(resolvedValue));
                         }
-                    }
 
-                    foreach (var child in subobj.Children<JObject>())
-                        stack.Push(child);
+                        foreach (var child in prop.Children<JObject>())
+                            stack.Push(child);
+                    }
                 }
 
-                stepProperty.SetValue(pStep, destObj);
+                var typedObj = destObj.ToObject(stepProperty.PropertyType);
+                stepProperty.SetValue(pStep, typedObj);
             }
             return acn;
         }
-
     }
 }

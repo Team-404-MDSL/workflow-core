@@ -37,6 +37,16 @@ namespace WorkflowCore.TestAssets
         {
             return File.ReadAllText("stored-def-missing-input-property.json");
         }
+
+        public static string GetTestDefinitionJsonNullableProperty()
+        {
+            return File.ReadAllText("stored-def-nullable-property.json");
+        }
+
+        public static string GetTestDefinitionJsonNestedProperty()
+        {
+            return File.ReadAllText("stored-def-nested-property.json");
+        }
     }
 }
 

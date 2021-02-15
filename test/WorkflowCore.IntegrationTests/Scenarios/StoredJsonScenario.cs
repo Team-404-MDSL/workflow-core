@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using WorkflowCore.Interface;
+﻿using FluentAssertions;
+using System;
 using WorkflowCore.Models;
-using Xunit;
 using FluentAssertions;
 using WorkflowCore.Services.DefinitionStorage;
-using WorkflowCore.Testing;
 using WorkflowCore.TestAssets.DataTypes;
+using WorkflowCore.Testing;
+using Xunit;
 
 namespace WorkflowCore.IntegrationTests.Scenarios
 {
@@ -25,8 +23,8 @@ namespace WorkflowCore.IntegrationTests.Scenarios
             WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(30));
 
             var data = GetData<CounterBoard>(workflowId);
+            UnhandledStepErrors.Should().BeEmpty();
             GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
-            UnhandledStepErrors.Count.Should().Be(0);
             data.Counter1.Should().Be(1);
             data.Counter2.Should().Be(1);
             data.Counter3.Should().Be(1);
@@ -44,8 +42,8 @@ namespace WorkflowCore.IntegrationTests.Scenarios
             WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(30));
 
             var data = GetData<CounterBoard>(workflowId);
+            UnhandledStepErrors.Should().BeEmpty();
             GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
-            UnhandledStepErrors.Count.Should().Be(0);
             data.Counter1.Should().Be(1);
             data.Counter2.Should().Be(1);
             data.Counter3.Should().Be(1);
@@ -75,14 +73,75 @@ namespace WorkflowCore.IntegrationTests.Scenarios
             WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(30));
 
             var data = GetData<DynamicData>(workflowId);
+            UnhandledStepErrors.Should().BeEmpty();
             GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
-            UnhandledStepErrors.Count.Should().Be(0);
             data["Counter1"].Should().Be(1);
             data["Counter2"].Should().Be(1);
             data["Counter3"].Should().Be(1);
             data["Counter4"].Should().Be(1);
             data["Counter5"].Should().Be(0);
             data["Counter6"].Should().Be(1);
+        }
+
+        [Fact]
+        public void should_execute_json_workflow_with_nullable_step_properties()
+        {
+            var initialData = new DynamicData
+            {
+                ["date"] = "2020-05-22T11:20:37.034Z",
+                ["Counter1"] = 0,
+            };
+
+            var workflowId = StartWorkflow(TestAssets.Utils.GetTestDefinitionJsonNullableProperty(), initialData);
+            WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(10));
+
+            var data = GetData<DynamicData>(workflowId);
+            UnhandledStepErrors.Should().BeEmpty();
+            GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
+            data["Counter1"].Should().Be(1);
+        }
+
+        [Fact]
+        public void should_execute_json_workflow_with_null_step_properties()
+        {
+            var initialData = new DynamicData
+            {
+                ["date"] = null,
+                ["Counter1"] = 0,
+            };
+
+            var workflowId = StartWorkflow(TestAssets.Utils.GetTestDefinitionJsonNullableProperty(), initialData);
+            WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(10));
+
+            var data = GetData<DynamicData>(workflowId);
+            UnhandledStepErrors.Should().BeEmpty();
+            GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
+            data["Counter1"].Should().Be(1);
+        }
+
+        [Fact]
+        public void should_execute_json_workflow_and_evaluate_nested_step_properties()
+        {
+            var initialData = new DynamicData
+            {
+                ["dob"] = new DateTime(2020, 06, 15)
+            };
+
+            var workflowId = StartWorkflow(TestAssets.Utils.GetTestDefinitionJsonNestedProperty(), initialData);
+            WaitForWorkflowToComplete(workflowId, TimeSpan.FromSeconds(10));
+
+            var data = GetData<DynamicData>(workflowId);
+            UnhandledStepErrors.Should().BeEmpty();
+            GetStatus(workflowId).Should().Be(WorkflowStatus.Complete);
+            var expected = new Person
+            {
+                Name = "Test Name",
+                NestedData = new NestedData
+                {
+                    DoB = new DateTime(2020, 06, 15)
+                }
+            };
+            data["Person"].ShouldBeEquivalentTo(expected);
         }
     }
 }
