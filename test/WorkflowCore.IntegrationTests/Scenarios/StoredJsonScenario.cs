@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
 using System;
 using WorkflowCore.Models;
+using FluentAssertions;
+using WorkflowCore.Services.DefinitionStorage;
 using WorkflowCore.TestAssets.DataTypes;
 using WorkflowCore.Testing;
 using Xunit;
@@ -8,7 +10,7 @@ using Xunit;
 namespace WorkflowCore.IntegrationTests.Scenarios
 {
     public class StoredJsonScenario : JsonWorkflowTest
-    {   
+    {
         public StoredJsonScenario()
         {
             Setup();

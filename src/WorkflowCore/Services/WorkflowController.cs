@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WorkflowCore.Exceptions;
 using WorkflowCore.Interface;
@@ -19,9 +20,11 @@ namespace WorkflowCore.Services
         private readonly IQueueProvider _queueProvider;
         private readonly IExecutionPointerFactory _pointerFactory;
         private readonly ILifeCycleEventHub _eventHub;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
+        private readonly IDateTimeProvider _dateTimeProvider;
 
-        public WorkflowController(IPersistenceProvider persistenceStore, IDistributedLockProvider lockProvider, IWorkflowRegistry registry, IQueueProvider queueProvider, IExecutionPointerFactory pointerFactory, ILifeCycleEventHub eventHub, ILoggerFactory loggerFactory)
+        public WorkflowController(IPersistenceProvider persistenceStore, IDistributedLockProvider lockProvider, IWorkflowRegistry registry, IQueueProvider queueProvider, IExecutionPointerFactory pointerFactory, ILifeCycleEventHub eventHub, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, IDateTimeProvider dateTimeProvider)
         {
             _persistenceStore = persistenceStore;
             _lockProvider = lockProvider;
@@ -29,7 +32,9 @@ namespace WorkflowCore.Services
             _queueProvider = queueProvider;
             _pointerFactory = pointerFactory;
             _eventHub = eventHub;
+            _serviceProvider = serviceProvider;
             _logger = loggerFactory.CreateLogger<WorkflowController>();
+            _dateTimeProvider = dateTimeProvider;
         }
 
         public Task<string> StartWorkflow(string workflowId, object data = null, string reference=null)
@@ -42,7 +47,7 @@ namespace WorkflowCore.Services
             return StartWorkflow<object>(workflowId, version, data, reference);
         }
 
-        public Task<string> StartWorkflow<TData>(string workflowId, TData data = null, string reference=null) 
+        public Task<string> StartWorkflow<TData>(string workflowId, TData data = null, string reference=null)
             where TData : class, new()
         {
             return StartWorkflow<TData>(workflowId, null, data, reference);
@@ -65,7 +70,7 @@ namespace WorkflowCore.Services
                 Data = data,
                 Description = def.Description,
                 NextExecution = 0,
-                CreateTime = DateTime.Now.ToUniversalTime(),
+                CreateTime = _dateTimeProvider.UtcNow,
                 Status = WorkflowStatus.Runnable,
                 Reference = reference
             };
@@ -80,12 +85,18 @@ namespace WorkflowCore.Services
 
             wf.ExecutionPointers.Add(_pointerFactory.BuildGenesisPointer(def));
 
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var middlewareRunner = scope.ServiceProvider.GetRequiredService<IWorkflowMiddlewareRunner>();
+                await middlewareRunner.RunPreMiddleware(wf, def);
+            }
+
             string id = await _persistenceStore.CreateNewWorkflow(wf);
             await _queueProvider.QueueWork(id, QueueType.Workflow);
             await _queueProvider.QueueWork(id, QueueType.Index);
             await _eventHub.PublishNotification(new WorkflowStarted()
             {
-                EventTimeUtc = DateTime.UtcNow,
+                EventTimeUtc = _dateTimeProvider.UtcNow,
                 Reference = reference,
                 WorkflowInstanceId = id,
                 WorkflowDefinitionId = def.Id,
@@ -102,7 +113,7 @@ namespace WorkflowCore.Services
             if (effectiveDate.HasValue)
                 evt.EventTime = effectiveDate.Value.ToUniversalTime();
             else
-                evt.EventTime = DateTime.Now.ToUniversalTime();
+                evt.EventTime = _dateTimeProvider.UtcNow;
 
             evt.EventData = eventData;
             evt.EventKey = eventKey;
@@ -128,7 +139,7 @@ namespace WorkflowCore.Services
                     await _queueProvider.QueueWork(workflowId, QueueType.Index);
                     await _eventHub.PublishNotification(new WorkflowSuspended()
                     {
-                        EventTimeUtc = DateTime.UtcNow,
+                        EventTimeUtc = _dateTimeProvider.UtcNow,
                         Reference = wf.Reference,
                         WorkflowInstanceId = wf.Id,
                         WorkflowDefinitionId = wf.WorkflowDefinitionId,
@@ -164,7 +175,7 @@ namespace WorkflowCore.Services
                     await _queueProvider.QueueWork(workflowId, QueueType.Index);
                     await _eventHub.PublishNotification(new WorkflowResumed()
                     {
-                        EventTimeUtc = DateTime.UtcNow,
+                        EventTimeUtc = _dateTimeProvider.UtcNow,
                         Reference = wf.Reference,
                         WorkflowInstanceId = wf.Id,
                         WorkflowDefinitionId = wf.WorkflowDefinitionId,
@@ -198,7 +209,7 @@ namespace WorkflowCore.Services
                 await _queueProvider.QueueWork(workflowId, QueueType.Index);
                 await _eventHub.PublishNotification(new WorkflowTerminated()
                 {
-                    EventTimeUtc = DateTime.UtcNow,
+                    EventTimeUtc = _dateTimeProvider.UtcNow,
                     Reference = wf.Reference,
                     WorkflowInstanceId = wf.Id,
                     WorkflowDefinitionId = wf.WorkflowDefinitionId,
@@ -213,17 +224,17 @@ namespace WorkflowCore.Services
         }
 
         public void RegisterWorkflow<TWorkflow>()
-            where TWorkflow : IWorkflow, new()
+            where TWorkflow : IWorkflow
         {
-            TWorkflow wf = new TWorkflow();
+            TWorkflow wf = ActivatorUtilities.CreateInstance<TWorkflow>(_serviceProvider);
             _registry.RegisterWorkflow(wf);
         }
 
         public void RegisterWorkflow<TWorkflow, TData>()
-            where TWorkflow : IWorkflow<TData>, new()
+            where TWorkflow : IWorkflow<TData>
             where TData : new()
         {
-            TWorkflow wf = new TWorkflow();
+            TWorkflow wf = ActivatorUtilities.CreateInstance<TWorkflow>(_serviceProvider);
             _registry.RegisterWorkflow<TData>(wf);
         }
     }
